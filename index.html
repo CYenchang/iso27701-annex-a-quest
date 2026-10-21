@@ -2,7 +2,6 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* Layout: one phone-width column for learners (stage → task card → feedback); a wider projector layout at #host. Controller = indigo, processor = teal, everywhere. */
 :root{
@@ -546,124 +545,8 @@ function renderEnd(){
   };
 }
 
-/* =================== 講師端（#host） =================== */
-const H = store.get("q27701host", null) || {tab:"qr",link:"",rows:Array.from({length:7},()=>({n:"",s:""})),board:false,rv:0,reveal:false,secs:900,left:900,clear:false};
-if(!H.ver) H.ver="adv";
-if(!H.link) H.link="https://cyenchang.github.io/iso27701-annex-a-quest/";
-let tick=null;
-function hsave(){store.set("q27701host",H)}
-function fmt(s){const m=Math.floor(s/60),x=s%60;return `${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`}
-
-function renderHost(){
-  app.className="wrap wide";
-  useVersion(H.ver); if(H.rv>=TASKS.length) H.rv=0;
-  const tabs=[["qr","掃碼入場"],["score","計時與排行榜"],["review","逐題檢討"]];
-  let body="";
-  if(H.tab==="qr") body=hostQR();
-  if(H.tab==="score") body=hostScore();
-  if(H.tab==="review") body=hostReview();
-  app.innerHTML=`<div class="top"><div><div class="eyebrow">講師主控台</div><h2 style="font-size:24px;font-weight:900">附錄 A 五關挑戰</h2></div><div class="score-pill">${VER.label}．滿分 ${TOTAL}</div></div>
-  <div class="actions" style="margin-top:4px"><span class="eyebrow" style="align-self:center;flex:none">本場使用</span>${Object.values(VERSIONS).map(v=>`<button class="btn ${H.ver===v.key?"":"ghost"}" data-ver="${v.key}" style="flex:none">${v.label}</button>`).join("")}</div>
-  <div class="tabs">${tabs.map(([k,v])=>`<button class="tab ${H.tab===k?"on":""}" data-tab="${k}">${v}</button>`).join("")}</div>${body}`;
-  app.querySelectorAll("[data-ver]").forEach(b=>b.onclick=()=>{H.ver=b.dataset.ver;H.rv=0;H.reveal=false;hsave();renderHost()});
-  app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{H.tab=b.dataset.tab;hsave();renderHost()});
-  if(H.tab==="qr") bindQR();
-  if(H.tab==="score") bindScore();
-  if(H.tab==="review") bindReview();
-}
-function hostQR(){
-  return `<div class="host-grid">
-    <div id="qrbox"><div class="qr-empty">貼上學員連結後，這裡會顯示 QR Code</div></div>
-    <div>
-      <h3 style="font-size:20px">學員掃碼入場．${VER.label}</h3>
-      <ol class="steps">
-        <li>在上方選「入門版」或「挑戰版」，QR Code 會自動帶到對應版本。</li>
-        <li>下方是網站網址，已預先填好；系統會自動去掉 <span class="mono">#host</span>。</li>
-        <li>投影這一頁，學員用手機相機掃描即可，不需要登入。</li>
-      </ol>
-      <label for="lk" class="eyebrow" style="display:block;margin-top:16px">網站網址</label>
-      <input id="lk" placeholder="https://claude.ai/…" value="${esc(H.link)}" style="margin-top:6px">
-      <div class="actions"><button class="btn" id="mk">產生 QR Code</button></div>
-      <div class="linktext" id="lt"></div>
-    </div></div>`;
-}
-function drawQR(){
-  const box=document.getElementById("qrbox"); if(!box) return;
-  const base=H.link.trim().split("#")[0].split("?")[0];
-  const url=base ? base+(H.ver==="basic"?"?v=basic":"") : "";
-  if(!url){return}
-  box.innerHTML="";
-  if(typeof QRCode==="undefined"){box.innerHTML=`<div class="qr-empty">QR 元件載入失敗，請直接把下方連結貼給學員。</div>`}
-  else new QRCode(box,{text:url,width:340,height:340,correctLevel:QRCode.CorrectLevel.M});
-  document.getElementById("lt").textContent=url;
-}
-function bindQR(){
-  const lk=document.getElementById("lk");
-  document.getElementById("mk").onclick=()=>{H.link=lk.value;hsave();drawQR()};
-  drawQR();
-}
-function hostScore(){
-  const ranked=H.rows.filter(r=>r.n.trim()).map(r=>({n:r.n,s:Number(r.s)||0})).sort((a,b)=>b.s-a.s);
-  let rk=0,prev=null;
-  const board=ranked.map((r,i)=>{if(r.s!==prev){rk=i+1;prev=r.s}return `<div class="brow ${rk===1?"top1":""}"><span class="rk">#${rk}</span><span>${esc(r.n)}</span><span class="sc">${r.s}</span></div>`}).join("") || `<p class="hidden-ans">左側輸入學員暱稱與分數後，這裡會依分數排序。</p>`;
-  return `<div class="host-grid">
-    <div>
-      <div class="card" style="text-align:center">
-        <div class="eyebrow">闖關計時</div>
-        <div class="timer ${H.left<=60?"low":""}" id="tm">${fmt(H.left)}</div>
-        <div class="actions"><button class="btn" id="tgo">${tick?"暫停":"開始"}</button><button class="btn ghost" id="trs">重設</button>
-          <button class="btn ghost" id="tm10">10 分</button><button class="btn ghost" id="tm15">15 分</button><button class="btn ghost" id="tm20">20 分</button></div>
-      </div>
-      <h3 style="font-size:18px;margin:22px 0 10px">登記分數</h3>
-      ${H.rows.map((r,i)=>`<div class="sb-row"><span class="i">${i+1}</span><input id="sbn${i}" data-i="${i}" data-f="n" placeholder="暱稱" value="${esc(r.n)}"><input id="sbs${i}" class="s" data-i="${i}" data-f="s" inputmode="numeric" placeholder="分數" value="${esc(r.s)}"><button class="x" data-del="${i}" aria-label="刪除第 ${i+1} 列">✕</button></div>`).join("")}
-      <div class="actions"><button class="btn ghost" id="add">新增一列</button><button class="btn ghost" id="clr">${H.clear?"確定清空":"清空分數"}</button></div>
-    </div>
-    <div>
-      <div class="actions" style="margin-top:0"><button class="btn accent full" id="bd">${H.board?"隱藏排名":"揭曉排名"}</button></div>
-      <div class="board" style="margin-top:14px">${H.board?board:`<p class="hidden-ans" style="text-align:center;padding:40px 0">排名已隱藏，按「揭曉排名」公布。</p>`}</div>
-    </div></div>`;
-}
-function bindScore(){
-  app.querySelectorAll(".sb-row input").forEach(inp=>inp.oninput=()=>{H.rows[+inp.dataset.i][inp.dataset.f]=inp.value;hsave();
-    if(H.board){const b=app.querySelector(".board");const tmp=document.createElement("div");tmp.innerHTML=hostScore();b.innerHTML=tmp.querySelector(".board").innerHTML}});
-  app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{H.rows.splice(+b.dataset.del,1);hsave();renderHost()});
-  document.getElementById("add").onclick=()=>{H.rows.push({n:"",s:""});hsave();renderHost()};
-  document.getElementById("clr").onclick=()=>{if(!H.clear){H.clear=true;renderHost();return}H.rows=Array.from({length:7},()=>({n:"",s:""}));H.clear=false;H.board=false;hsave();renderHost()};
-  document.getElementById("bd").onclick=()=>{H.board=!H.board;hsave();renderHost()};
-  document.getElementById("tgo").onclick=()=>{
-    if(tick){clearInterval(tick);tick=null}
-    else tick=setInterval(()=>{H.left=Math.max(0,H.left-1);hsave();const el=document.getElementById("tm");if(el){el.textContent=fmt(H.left);el.classList.toggle("low",H.left<=60)}if(H.left===0){clearInterval(tick);tick=null;if(H.tab==="score")renderHost()}},1000);
-    renderHost()};
-  document.getElementById("trs").onclick=()=>{if(tick){clearInterval(tick);tick=null}H.left=H.secs;hsave();renderHost()};
-  [10,15,20].forEach(m=>document.getElementById("tm"+m).onclick=()=>{if(tick){clearInterval(tick);tick=null}H.secs=H.left=m*60;hsave();renderHost()});
-}
-function reviewBody(t){
-  if(t.type==="mc") return `<div class="rv-list">${t.opts.map((o,j)=>`<div class="r ${j===t.a?"ok":""}">${"ABCD"[j]}．${o}</div>`).join("")}</div>`;
-  if(t.type==="sort") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span><span class="code">${it.c}</span> ${it.t}</span><span class="rv-ans">${(t.stages||STAGES)[it.a]}</span></div>`).join("")}</div>`;
-  if(t.type==="match") return `<div class="rv-pairs">${t.left.map((it,j)=>`<div><span class="code">${it.c}</span> ${it.t}</div><div><span class="rv-ans"><span class="code p">${t.right[j].c}</span> ${t.right[j].t}</span><span class="hidden-ans">？</span></div>`).join("")}</div>`;
-  if(t.type==="tri") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span>${it.t}</span><span class="rv-ans">${(t.choices||TRI)[it.a]}．<span style="font-size:13px">${it.c}</span></span></div>`).join("")}</div>`;
-}
-function hostReview(){
-  const t=TASKS[H.rv];
-  return `<div class="rv-nav"><button class="btn ghost" id="pv" ${H.rv===0?"disabled":""}>上一題</button>
-    <span class="mono">${H.rv+1} / ${TASKS.length}．第 ${t.lv} 關 ${LEVELS[t.lv-1].name}</span>
-    <button class="btn ghost" id="nx2" ${H.rv===TASKS.length-1?"disabled":""}>下一題</button></div>
-    <div class="rv-card ${H.reveal?"reveal":""}">
-      <div class="eyebrow">對應投影片：${LEVELS[t.lv-1].src}</div>
-      <div class="q">${t.q}</div>${reviewBody(t)}
-      <div class="rv-ans fb ok" style="font-size:17px"><strong>講解</strong>${t.exp}</div>
-    </div>
-    <div class="actions"><button class="btn accent" id="rvl">${H.reveal?"隱藏答案":"揭曉答案"}</button></div>`;
-}
-function bindReview(){
-  document.getElementById("pv").onclick=()=>{H.rv--;H.reveal=false;hsave();renderHost()};
-  document.getElementById("nx2").onclick=()=>{H.rv++;H.reveal=false;hsave();renderHost()};
-  document.getElementById("rvl").onclick=()=>{H.reveal=!H.reveal;hsave();renderHost()};
-}
-
 /* =================== 路由 =================== */
 function render(){
-  if(location.hash==="#host"){renderHost();return}
   app.className="wrap";
   if(S.phase==="start") return renderStart();
   if(S.phase==="intro") return renderIntro();
@@ -675,6 +558,6 @@ function render(){
   lastKey=key;
 }
 let lastKey="";
-window.addEventListener("hashchange",()=>{ if(location.hash==="#host"||location.hash==="#basic"||!location.hash) location.reload(); });
+window.addEventListener("hashchange",()=>{ if(location.hash==="#basic"||!location.hash) location.reload(); });
 render();
 </script>
