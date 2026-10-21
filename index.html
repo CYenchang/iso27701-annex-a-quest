@@ -146,6 +146,26 @@ input{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid va
 .show{margin-top:20px;font-size:15px;font-weight:700}
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:22px}
 .confirm{margin-top:10px;font-size:14px;color:var(--bad)}
+.note-p{font-size:13px;color:var(--muted);margin:6px 0 0}
+.sent{margin-top:20px;text-align:left}
+.sent.ok{color:var(--good);font-weight:700;text-align:center;font-size:16px}
+.sendrow{display:flex;gap:8px;margin-top:6px}
+.sendrow input{flex:1;min-width:0;font-family:var(--f-mono);font-size:18px;letter-spacing:.15em}
+.sendrow .btn{flex:none}
+.session-code{font-family:var(--f-mono);font-size:64px;font-weight:600;letter-spacing:.12em;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.live-head{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.live-stat{font-size:14px;color:var(--muted)}
+.accrow{display:grid;grid-template-columns:minmax(0,1fr) 140px 3.6em;gap:10px;align-items:center;font-size:14px;padding:4px 0}
+.accrow .q2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.accrow .tr{height:10px;background:var(--paper);border-radius:5px;overflow:hidden}
+.accrow .fl{display:block;height:100%;background:var(--ink);border-radius:5px}
+.accrow .v{font-family:var(--f-mono);text-align:right}
+.accrow.lowq .q2,.accrow.lowq .v{color:var(--bad);font-weight:700}
+.accrow.lowq .fl{background:var(--bad)}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:8px}
+details.cfg{border:1.5px solid var(--line);border-radius:var(--r);padding:12px 16px;background:var(--card);margin-bottom:18px}
+details.cfg summary{cursor:pointer;font-weight:700}
+.cfg-grid{display:grid;gap:10px;margin-top:12px}
 
 /* host */
 .tabs{display:flex;gap:6px;border-bottom:1.5px solid var(--line);margin:14px 0 20px;overflow-x:auto}
@@ -316,6 +336,8 @@ function pickVersion(){
   return v==="basic"?"basic":"adv";
 }
 const PTS = 10;
+/* 線上成績後台：部署 Apps Script 後，把 Web App 網址貼在這裡；留空就只顯示成績畫面 */
+const API_URL = "https://script.google.com/macros/s/AKfycbw_1iX8Nsy-E1PTWLtzYAMjE7Y1RmyaLVEHBLm0RlmgA3hkdApN7eVfZ-v-ZktCdXmQ/exec";
 let VER, LEVELS, TASKS, TOTAL;
 const maxOf = t => t.type==="mc" ? PTS : (t.items||t.left).length*PTS;
 const lvMax = n => TASKS.filter(t=>t.lv===n).reduce((s,t)=>s+maxOf(t),0);
@@ -332,8 +354,35 @@ const app = document.getElementById("app");
 
 /* =================== 學員端 =================== */
 const SKEY="q27701_"+VER.key;
-let S = store.get(SKEY, null) || fresh();
-function fresh(){return {name:"",phase:"start",i:0,res:[],tmp:null,checked:false,confirmReset:false}}
+let S = Object.assign(fresh(), store.get(SKEY, null) || {});
+function fresh(){return {name:"",phase:"start",i:0,res:[],tmp:null,checked:false,confirmReset:false,session:"",sent:false,sending:false,sendErr:"",autoTried:false}}
+S.sending=false;
+function deviceId(){
+  let id=store.get("q27701_cid",""); if(id) return id;
+  const a=new Uint8Array(8); try{crypto.getRandomValues(a)}catch(e){for(let i=0;i<8;i++)a[i]=Math.random()*256|0}
+  id=[...a].map(x=>x.toString(16).padStart(2,"0")).join(""); store.set("q27701_cid",id); return id;
+}
+async function submitScore(){
+  if(!API_URL||S.sending) return;
+  if(!/^\d{4,6}$/.test(S.session||"")){S.sendErr="請輸入講師投影的場次代碼。";save();render();return}
+  S.sending=true; S.sendErr=""; save(); render();
+  try{
+    const detail=TASKS.map((t,i)=>S.res[i]?S.res[i].got:0);
+    const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"submit",session:S.session,ver:VER.key,nick:S.name,score:score(),max:TOTAL,detail,cid:deviceId()})});
+    const j=await r.json();
+    if(j.ok) S.sent = j.dup ? "dup" : "ok";
+    else S.sendErr = j.error==="bad_session" ? "場次代碼不正確或已過期，請再確認一次講師投影的代碼。" : "登記失敗，請稍後再按一次。";
+  }catch(e){ S.sendErr="連線失敗，請確認手機網路後再按一次。"; }
+  S.sending=false; save(); render();
+}
+function sendBlock(){
+  if(!API_URL) return `<div class="show">請把這個畫面舉起來給講師登記分數</div>`;
+  if(S.sent) return `<div class="sent ok">✓ ${S.sent==="dup"?"本場成績已經登記過（以第一次為準）":"成績已送到講師的排行榜"}</div>`;
+  return `<div class="sent"><label for="sc2" class="eyebrow">場次代碼</label>
+    <div class="sendrow"><input id="sc2" inputmode="numeric" maxlength="6" placeholder="講師投影的數字" value="${esc(S.session||"")}"><button class="btn" id="send" ${S.sending?"disabled":""}>${S.sending?"送出中…":"送出成績"}</button></div>
+    ${S.sendErr?`<div class="confirm">${S.sendErr}</div>`:""}
+    <p class="note-p">只會送出暱稱、版本和各題得分，不含真實姓名或任何聯絡資料。</p></div>`;
+}
 function save(){store.set(SKEY,S)}
 const score = () => S.res.reduce((s,r)=>s+(r?r.got:0),0);
 function initTmp(t){
@@ -364,8 +413,11 @@ function renderStart(){
     <p>${VER.blurb}答對一項得 ${PTS} 分，滿分 ${TOTAL} 分。</p>
   </div>
   <div class="card">
-    <label for="nm" class="eyebrow">你的暱稱（會顯示在成績畫面）</label>
+    <label for="nm" class="eyebrow">${API_URL?"你的暱稱（會顯示在排行榜，請勿使用真實姓名）":"你的暱稱（會顯示在成績畫面）"}</label>
     <input id="nm" maxlength="12" placeholder="例如：小明" value="${esc(S.name)}" style="margin-top:8px">
+    ${API_URL?`<label for="sc" class="eyebrow" style="display:block;margin-top:14px">場次代碼（講師投影的數字）</label>
+    <input id="sc" inputmode="numeric" maxlength="6" placeholder="例如：4821" value="${esc(S.session||"")}" style="margin-top:8px;font-family:var(--f-mono);letter-spacing:.15em">
+    <p class="note-p">破關後成績會自動送到講師的排行榜，只包含暱稱與分數。</p>`:""}
     <div class="levels">${LEVELS.map(l=>`<div class="lv"><div class="n">0${l.n}</div><div><div class="t">${l.name}</div><div class="s">${l.src}</div></div><div class="m">${lvMax(l.n)} 分</div></div>`).join("")}</div>
     <button class="btn full accent" id="go">開始闖關</button>
   </div>
@@ -374,7 +426,7 @@ function renderStart(){
   const upd=()=>{go.disabled=!nm.value.trim()}; upd();
   nm.oninput=upd;
   nm.onkeydown=e=>{if(e.key==="Enter"&&nm.value.trim())go.click()};
-  go.onclick=()=>{S.name=nm.value.trim().slice(0,12);S.res=[];goTask(0)};
+  go.onclick=()=>{S.name=nm.value.trim().slice(0,12);const sc=document.getElementById("sc");if(sc)S.session=sc.value.replace(/\D/g,"").slice(0,6);S.res=[];goTask(0)};
 }
 
 function renderIntro(){
@@ -534,15 +586,18 @@ function renderEnd(){
     <div class="of">滿分 ${TOTAL} 分．答對率 ${Math.round(pct*100)}%</div>
     <div class="rank">${rankOf(pct)}</div>
     <div class="bars">${bars}</div>
-    <div class="show">請把這個畫面舉起來給講師登記分數</div>
+    ${sendBlock()}
     <div class="actions"><button class="btn ghost full" id="again">${S.confirmReset?"確定清除成績，重新開始":"重新挑戰"}</button></div>
     ${S.confirmReset?`<div class="confirm">再按一次會清除目前成績。</div>`:""}
   </div>
   <p class="foot">講師補充教材｜非官方課程內容、不在考試範圍</p>`;
   document.getElementById("again").onclick=()=>{
     if(!S.confirmReset){S.confirmReset=true;save();render();return}
-    const nm=S.name; S=fresh(); S.name=nm; save(); render();
+    const nm=S.name, ss=S.session; S=fresh(); S.name=nm; S.session=ss; save(); render();
   };
+  const sb=document.getElementById("send");
+  if(sb) sb.onclick=()=>{S.session=document.getElementById("sc2").value.replace(/\D/g,"").slice(0,6);submitScore()};
+  if(API_URL && S.session && !S.sent && !S.autoTried){S.autoTried=true;save();submitScore();}
 }
 
 /* =================== 路由 =================== */
