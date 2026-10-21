@@ -192,7 +192,7 @@ input{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid va
 
 <script>
 /* ---------- 題庫（依講師補充教材 5 張投影片；ISO/IEC 27701:2025 中文條文本 v1.2） ---------- */
-const LEVELS = [
+const ADV_LEVELS = [
   {n:1, name:"看數字猜角色", src:"一張圖看懂附錄 A、B", how:"先猜再聽講解：數字會告訴你控制者和處理者各自的重心在哪裡。"},
   {n:2, name:"生命週期歸位", src:"A.1 控制者：資料生命週期", how:"一筆個資從規劃走到結束。把控制措施放回它最主要的那一站。"},
   {n:3, name:"鏡像連連看", src:"A.1 與 A.2 鏡像對照", how:"同一件事，控制者「決定」，處理者「配合並證明」。把兩邊對應的條文連起來。"},
@@ -203,7 +203,7 @@ const STAGES = ["① 規劃","② 蒐集","③ 處理利用","④ 委外共享",
 const TRI = ["控制者獨有","處理者獨有","兩邊都有"];
 const BLOCKS = ["① 收集和處理條件","② 對 PII 主體的義務","③ 隱私設計與預設隱私","④ PII 的共享、傳輸和揭露"];
 
-const TASKS = [
+const ADV_TASKS = [
   // 第 1 關
   {lv:1,type:"mc",q:"表 A.1「PII 控制者」共 31 項，分成四個區塊。哪一個區塊的控制措施最多？",opts:BLOCKS,a:1,
    exp:"② 對 PII 主體的義務有 10 項（告知、撤回同意、反對、存取更正刪除、自動化決策…）。控制者的重心在「對當事人」。其餘：① 8 項、③ 9 項、④ 4 項。"},
@@ -250,10 +250,78 @@ const TASKS = [
   {lv:5,type:"mc",q:"最後一題，一句話總結：A.1／A.2 和 A.3 各管什麼？",opts:["A.1／A.2 管「做的時候安不安全」，A.3 管「該不該做」","A.1／A.2 管「該不該做」，A.3 管「做的時候安不安全」","A.1／A.2 管文件，A.3 管技術","兩者沒有分工，內容重複"],a:1,
    exp:"A.3 不是另一套獨立流程，而是撐在每一站底下的安全基座。"}
 ];
+/* ---------- 入門版：熟悉條文編號、名稱與附錄架構 ---------- */
+const BASIC_LEVELS = [
+  {n:1, name:"認識地圖", src:"一張圖看懂附錄 A、B", how:"先認識附錄 A 的整體架構：幾張表、各給誰用、分成哪幾個區塊。"},
+  {n:2, name:"編號密碼", src:"附錄 A 的編號規則", how:"小祕訣：看編號第三碼就知道是哪個區塊。.2 → ①、.3 → ②、.4 → ③、.5 → ④。"},
+  {n:3, name:"編號配名稱", src:"表 A.1、表 A.2 條文", how:"把條文編號和名稱連起來，熟悉常用的條文。"},
+  {n:4, name:"放進哪張表", src:"A.1 控制者／A.2 處理者／A.3 共通安全", how:"看到控制措施名稱，判斷它在哪一張表。"},
+  {n:5, name:"是非快答", src:"重點複習", how:"看到一句話，判斷對還是錯。"}
+];
+const TABLES = ["A.1 控制者","A.2 處理者","A.3 共通安全"];
+const TF = ["○ 正確","✗ 錯誤"];
+const BASIC_TASKS = [
+  // 第 1 關 認識地圖
+  {lv:1,type:"mc",q:"附錄 A 一共有幾張控制措施表？",opts:["2 張","3 張","4 張","5 張"],a:1,
+   exp:"3 張：表 A.1 PII 控制者、表 A.2 PII 處理者、表 A.3 控制者和處理者的安全考量。"},
+  {lv:1,type:"mc",q:"表 A.1 是給哪一種角色看的？",opts:["PII 處理者","PII 主體（當事人）","PII 控制者","主管機關"],a:2,
+   exp:"表 A.1 是 PII 控制者，共 31 項；表 A.2 是 PII 處理者，共 18 項。"},
+  {lv:1,type:"mc",q:"表 A.3「安全考量」適用於哪一種角色？",opts:["只適用控制者","只適用處理者","控制者和處理者都適用","只適用分包商"],a:2,
+   exp:"A.3 共 29 項，是兩種角色都適用的資訊安全基座：分類、存取、加密、日誌、事故、備份、供應商。"},
+  {lv:1,type:"mc",q:"表 A.1 和表 A.2 都分成幾個區塊？",opts:["3 個","4 個","5 個","6 個"],a:1,
+   exp:"四個區塊：① 收集和處理條件、② 對 PII 主體的義務、③ 隱私設計與預設隱私、④ PII 的共享、傳輸和揭露。"},
+  {lv:1,type:"mc",q:"附錄 A 說「做什麼」，那附錄 B 說什麼？",opts:["說「為什麼」","說「怎麼做」","說「誰來做」","說「何時做」"],a:1,
+   exp:"A 說做什麼、B 說怎麼做，編號一一對應：A.1.2.2 控制措施 ↔ B.1.2.2 實作指引。"},
+  // 第 2 關 編號密碼
+  {lv:2,type:"sort",q:"看編號第三碼，這條屬於哪一個區塊？",stages:BLOCKS,
+   items:[{c:"A.1.3.6",t:"反對處理",a:1},{c:"A.1.2.3",t:"確定合法依據",a:0},{c:"A.1.5.3",t:"可傳輸的國家和國際組織",a:3},{c:"A.1.4.2",t:"限制收集",a:2},{c:"A.2.5.8",t:"聘用分包商處理 PII",a:3},{c:"A.2.4.2",t:"臨時檔案",a:2}],
+   exp:"規則：A.x.2 → ① 收集和處理條件、A.x.3 → ② 對 PII 主體的義務、A.x.4 → ③ 隱私設計與預設隱私、A.x.5 → ④ 共享、傳輸和揭露。控制者和處理者用同一套規則。"},
+  {lv:2,type:"mc",q:"看到編號「A.2.5.x」，可以知道哪兩件事？",opts:["控制者的表；② 對 PII 主體的義務","處理者的表；④ PII 的共享、傳輸和揭露","共通安全的表；④ 共享、傳輸和揭露","處理者的表；① 收集和處理條件"],a:1,
+   exp:"第二碼 2 = 表 A.2 處理者；第三碼 5 = 第 ④ 區塊。處理者在這一塊最多，有 8 項。"},
+  // 第 3 關 編號配名稱
+  {lv:3,type:"match",q:"表 A.1 控制者：把條文編號連到正確的名稱。",heads:["條文編號","條文名稱"],
+   left:[{c:"A.1.2.2",t:""},{c:"A.1.2.6",t:""},{c:"A.1.2.9",t:""},{c:"A.1.3.7",t:""},{c:"A.1.4.8",t:""}],
+   right:[{c:"",t:"識別並記錄用途"},{c:"",t:"隱私影響評鑑"},{c:"",t:"與處理 PII 相關的記錄"},{c:"",t:"存取、更正或刪除"},{c:"",t:"保留期限"}],
+   order:[2,4,0,3,1],
+   exp:"A.1.2.9 就是處理活動清冊（RoPA），稽核員第一份要的文件。"},
+  {lv:3,type:"match",q:"表 A.2 處理者：把條文編號連到正確的名稱。",heads:["條文編號","條文名稱"],
+   left:[{c:"A.2.2.2",t:""},{c:"A.2.2.4",t:""},{c:"A.2.3.2",t:""},{c:"A.2.4.3",t:""},{c:"A.2.5.7",t:""}],
+   right:[{c:"",t:"客戶協議"},{c:"",t:"行銷和廣告用途"},{c:"",t:"履行對 PII 主體的義務"},{c:"",t:"PII 的返還、傳輸或處置"},{c:"",t:"揭露用於處理 PII 的分包商"}],
+   order:[3,1,4,0,2],
+   exp:"處理者的世界是「合約」：簽約（A.2.2.2）、不得擅自行銷（A.2.2.4）、協助客戶回應當事人（A.2.3.2）、合約結束交代資料（A.2.4.3）、先揭露分包商（A.2.5.7）。"},
+  // 第 4 關 放進哪張表
+  {lv:4,type:"tri",q:"這項控制措施在哪一張表？",choices:TABLES,
+   items:[{t:"取得並記錄同意",a:0,c:"A.1.2.5"},{t:"資訊備份",a:2,c:"A.3.24"},{t:"客戶協議",a:1,c:"A.2.2.2"},{t:"自動化決策",a:0,c:"A.1.3.11"},
+          {t:"加密",a:2,c:"A.3.26"},{t:"聘用分包商處理 PII",a:1,c:"A.2.5.8"},{t:"處理請求",a:0,c:"A.1.3.10"},{t:"日誌記錄",a:2,c:"A.3.25"}],
+   exp:"對當事人（同意、自動化決策、處理請求）找 A.1；對客戶和分包商找 A.2；資訊安全的基本功（備份、加密、日誌）找 A.3。"},
+  // 第 5 關 是非快答
+  {lv:5,type:"tri",q:"這句話正確嗎？",choices:TF,
+   items:[{t:"附錄 A 和附錄 B 都是規範性附錄",a:0,c:"正確。稽核依據看 A，證據長相參考 B。"},
+          {t:"處理者在「對 PII 主體的義務」有 10 項",a:1,c:"錯誤。處理者只有 1 項（A.2.3.2）；10 項的是控制者。"},
+          {t:"只當處理者，SoA 要看 A.2 + A.3",a:0,c:"正確。只當控制者看 A.1 + A.3；兩者兼具三張都要看。"},
+          {t:"排除某項控制措施，不需要寫理由",a:1,c:"錯誤。排除任何控制都要寫理由［6.1.3 e)］。"},
+          {t:"跨境傳輸屬於第 ④ 區塊",a:0,c:"正確。④ PII 的共享、傳輸和揭露（A.1.5.x、A.2.5.x）。"},
+          {t:"A.1.4.7 和 A.2.4.2 都叫「臨時檔案」",a:0,c:"正確。兩種角色都要管理暫存資料。"},
+          {t:"「隱私影響評鑑」是處理者的控制措施",a:1,c:"錯誤。隱私影響評鑑是控制者的 A.1.2.6。"}],
+   exp:"恭喜完成！記住三個口訣：看表號知角色、看第三碼知區塊、A 做什麼 B 怎麼做。"}
+];
+
+/* ---------- 版本切換 ---------- */
+const VERSIONS = {
+  adv:{key:"adv",label:"挑戰版",LEVELS:ADV_LEVELS,TASKS:ADV_TASKS,blurb:"用手機闖 5 關，把附錄 A 的 78 項控制措施放回業務流程。"},
+  basic:{key:"basic",label:"入門版",LEVELS:BASIC_LEVELS,TASKS:BASIC_TASKS,blurb:"用手機闖 5 關，熟悉附錄 A 的架構、條文編號與名稱。"}
+};
+function pickVersion(){
+  let v=null; try{v=new URLSearchParams(location.search).get("v")}catch(e){}
+  if(location.hash==="#basic") v="basic";
+  return v==="basic"?"basic":"adv";
+}
 const PTS = 10;
+let VER, LEVELS, TASKS, TOTAL;
 const maxOf = t => t.type==="mc" ? PTS : (t.items||t.left).length*PTS;
-const TOTAL = TASKS.reduce((s,t)=>s+maxOf(t),0);
 const lvMax = n => TASKS.filter(t=>t.lv===n).reduce((s,t)=>s+maxOf(t),0);
+function useVersion(k){VER=VERSIONS[k];LEVELS=VER.LEVELS;TASKS=VER.TASKS;TOTAL=TASKS.reduce((s,t)=>s+maxOf(t),0)}
+useVersion(pickVersion());
 
 /* ---------- 儲存（僅此瀏覽器） ---------- */
 const store = {
@@ -264,9 +332,10 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const app = document.getElementById("app");
 
 /* =================== 學員端 =================== */
-let S = store.get("q27701", null) || fresh();
+const SKEY="q27701_"+VER.key;
+let S = store.get(SKEY, null) || fresh();
 function fresh(){return {name:"",phase:"start",i:0,res:[],tmp:null,checked:false,confirmReset:false}}
-function save(){store.set("q27701",S)}
+function save(){store.set(SKEY,S)}
 const score = () => S.res.reduce((s,r)=>s+(r?r.got:0),0);
 function initTmp(t){
   if(t.type==="mc") return {pick:null};
@@ -292,8 +361,8 @@ function renderStart(){
   app.innerHTML = `
   <div class="hero">
     <div class="eyebrow">課堂闖關｜ISO/IEC 27701:2025</div>
-    <h1>附錄 A 五關挑戰</h1>
-    <p>用手機闖 5 關，把附錄 A 的 78 項控制措施放回業務流程。答對一項得 ${PTS} 分，滿分 ${TOTAL} 分。</p>
+    <h1>附錄 A 五關挑戰．${VER.label}</h1>
+    <p>${VER.blurb}答對一項得 ${PTS} 分，滿分 ${TOTAL} 分。</p>
   </div>
   <div class="card">
     <label for="nm" class="eyebrow">你的暱稱（會顯示在成績畫面）</label>
@@ -363,14 +432,15 @@ function renderSort(t){
   const rows = t.items.map((it,j)=>{
     const p=T.picks[j];
     const st = done ? (p===it.a?"right":"wrong") : "";
-    const btns = STAGES.map((s,k)=>`<button class="sbtn ${p===k?"sel":""} ${done&&k===it.a&&p!==it.a?"ans":""}" data-j="${j}" data-k="${k}" ${done?"disabled":""} aria-label="${s}">${s.slice(0,1)}</button>`).join("");
-    const note = done && p!==it.a ? `<div class="note">正確：${STAGES[it.a]}</div>` : "";
+    const SG=t.stages||STAGES;
+    const btns = SG.map((s,k)=>`<button class="sbtn ${p===k?"sel":""} ${done&&k===it.a&&p!==it.a?"ans":""}" data-j="${j}" data-k="${k}" ${done?"disabled":""} aria-label="${s}">${s.slice(0,1)}</button>`).join("");
+    const note = done && p!==it.a ? `<div class="note">正確：${SG[it.a]}</div>` : "";
     return `<div class="srow ${st}"><div class="lbl"><span class="code">${it.c}</span><span>${it.t}</span></div><div class="stages">${btns}</div>${note}</div>`;
   }).join("");
   const all = Object.keys(T.picks).length===t.items.length;
   const r=S.res[S.i];
   app.innerHTML = topHTML()+trackHTML()+`<div class="card">${qHead(t)}
-    <div class="legend">${STAGES.map(s=>`<span>${s}</span>`).join("")}</div>${rows}
+    <div class="legend">${(t.stages||STAGES).map(s=>`<span>${s}</span>`).join("")}</div>${rows}
     ${done? fbBox(r.got,r.max,t.exp)+nextBtn() : `<div class="actions"><button class="btn full" id="chk" ${all?"":"disabled"}>送出（已選 ${Object.keys(T.picks).length} / ${t.items.length}）</button></div>`}</div>`;
   if(!done){
     app.querySelectorAll(".sbtn").forEach(b=>b.onclick=()=>{T.picks[b.dataset.j]=+b.dataset.k;save();render()});
@@ -404,7 +474,7 @@ function renderMatch(t){
   }
   app.innerHTML = topHTML()+trackHTML()+`<div class="card">${qHead(t)}
     <p class="mhint">先點左邊的控制者條文，再點右邊對應的處理者條文。點已配對的左邊項目可以取消。</p>
-    <div class="mgrid"><div class="mcol"><div class="mhead c">控制者 表 A.1</div>${L}</div><div class="mcol"><div class="mhead p">處理者 表 A.2</div>${R}</div></div>
+    <div class="mgrid"><div class="mcol"><div class="mhead c">${(t.heads||["控制者 表 A.1"])[0]}</div>${L}</div><div class="mcol"><div class="mhead p">${(t.heads||["","處理者 表 A.2"])[1]}</div>${R}</div></div>
     ${done? fix+fbBox(r.got,r.max,t.exp)+nextBtn() : `<div class="actions"><button class="btn full" id="chk" ${all?"":"disabled"}>送出（已連 ${Object.keys(T.pairs).length} / ${t.left.length}）</button></div>`}</div>`;
   if(!done){
     app.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{
@@ -424,23 +494,23 @@ function renderMatch(t){
 }
 
 function renderTri(t){
-  const T=S.tmp, n=t.items.length;
+  const T=S.tmp, n=t.items.length, CH=t.choices||TRI;
   const dots = t.items.map((it,j)=>`<span class="dot ${T.picks[j]===undefined?"":T.picks[j]===it.a?"ok":"no"}"></span>`).join("");
   let body;
   if(S.checked){
     const r=S.res[S.i];
-    const list=t.items.map((it,j)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px"><span>${T.picks[j]===it.a?"✓":"✗"} ${it.t}</span><span style="color:var(--muted);white-space:nowrap">${TRI[it.a]}</span></div>`).join("");
+    const list=t.items.map((it,j)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px"><span>${T.picks[j]===it.a?"✓":"✗"} ${it.t}</span><span style="color:var(--muted);white-space:nowrap">${CH[it.a]}</span></div>`).join("");
     body = `<div>${list}</div>${fbBox(r.got,r.max,t.exp)}${nextBtn()}`;
   } else {
     const it=t.items[T.k], p=T.picks[T.k];
-    const ch = TRI.map((c,k)=>{
+    const ch = CH.map((c,k)=>{
       let cls=["c","p","b"][k];
       if(T.showing){ if(k===it.a) cls+=" right"; else if(k===p) cls+=" wrong"; }
       return `<button class="tc ${cls}" data-k="${k}" ${T.showing?"disabled":""}>${c}</button>`;
     }).join("");
-    const fb = T.showing ? `<div class="fb ${p===it.a?"ok":"no"}"><strong>${p===it.a?"答對了！+"+PTS:"答錯了，正確是「"+TRI[it.a]+"」"}</strong><span class="mono">${it.c}</span></div>
+    const fb = T.showing ? `<div class="fb ${p===it.a?"ok":"no"}"><strong>${p===it.a?"答對了！+"+PTS:"答錯了，正確是「"+CH[it.a]+"」"}</strong><span class="${t.choices===TF?"":"mono"}">${it.c}</span></div>
       <div class="actions"><button class="btn full" id="nx">${T.k===n-1?"看本關結果":"下一項"}</button></div>` : "";
-    body = `<div class="tri-count">${T.k+1} / ${n}</div><div class="tri-item">${it.t}</div><div class="tri-choices">${ch}</div>${fb}`;
+    body = `<div class="tri-count">${T.k+1} / ${n}</div><div class="tri-item">${it.t}</div><div class="tri-choices" style="grid-template-columns:repeat(${CH.length},1fr)">${ch}</div>${fb}`;
   }
   app.innerHTML = topHTML()+trackHTML()+`<div class="card">${qHead(t)}${body}<div class="dots">${dots}</div></div>`;
   if(S.checked){bindNext();return}
@@ -459,7 +529,7 @@ function renderEnd(){
     return `<div class="bar"><span>0${l.n} ${l.name}</span><span class="tr"><span class="fl" style="display:block;width:${Math.round(got/mx*100)}%"></span></span><span class="v">${got}/${mx}</span></div>`;
   }).join("");
   app.innerHTML = trackHTML()+`<div class="card result">
-    <div class="eyebrow">闖關完成</div>
+    <div class="eyebrow">闖關完成．${VER.label}</div>
     <div class="nm">${esc(S.name)}</div>
     <div class="pts">${sc}</div>
     <div class="of">滿分 ${TOTAL} 分．答對率 ${Math.round(pct*100)}%</div>
@@ -478,19 +548,24 @@ function renderEnd(){
 
 /* =================== 講師端（#host） =================== */
 const H = store.get("q27701host", null) || {tab:"qr",link:"",rows:Array.from({length:7},()=>({n:"",s:""})),board:false,rv:0,reveal:false,secs:900,left:900,clear:false};
+if(!H.ver) H.ver="adv";
+if(!H.link) H.link="https://cyenchang.github.io/iso27701-annex-a-quest/";
 let tick=null;
 function hsave(){store.set("q27701host",H)}
 function fmt(s){const m=Math.floor(s/60),x=s%60;return `${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`}
 
 function renderHost(){
   app.className="wrap wide";
+  useVersion(H.ver); if(H.rv>=TASKS.length) H.rv=0;
   const tabs=[["qr","掃碼入場"],["score","計時與排行榜"],["review","逐題檢討"]];
   let body="";
   if(H.tab==="qr") body=hostQR();
   if(H.tab==="score") body=hostScore();
   if(H.tab==="review") body=hostReview();
-  app.innerHTML=`<div class="top"><div><div class="eyebrow">講師主控台</div><h2 style="font-size:24px;font-weight:900">附錄 A 五關挑戰</h2></div><div class="score-pill">${TASKS.length} 題組．滿分 ${TOTAL}</div></div>
+  app.innerHTML=`<div class="top"><div><div class="eyebrow">講師主控台</div><h2 style="font-size:24px;font-weight:900">附錄 A 五關挑戰</h2></div><div class="score-pill">${VER.label}．滿分 ${TOTAL}</div></div>
+  <div class="actions" style="margin-top:4px"><span class="eyebrow" style="align-self:center;flex:none">本場使用</span>${Object.values(VERSIONS).map(v=>`<button class="btn ${H.ver===v.key?"":"ghost"}" data-ver="${v.key}" style="flex:none">${v.label}</button>`).join("")}</div>
   <div class="tabs">${tabs.map(([k,v])=>`<button class="tab ${H.tab===k?"on":""}" data-tab="${k}">${v}</button>`).join("")}</div>${body}`;
+  app.querySelectorAll("[data-ver]").forEach(b=>b.onclick=()=>{H.ver=b.dataset.ver;H.rv=0;H.reveal=false;hsave();renderHost()});
   app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{H.tab=b.dataset.tab;hsave();renderHost()});
   if(H.tab==="qr") bindQR();
   if(H.tab==="score") bindScore();
@@ -500,13 +575,13 @@ function hostQR(){
   return `<div class="host-grid">
     <div id="qrbox"><div class="qr-empty">貼上學員連結後，這裡會顯示 QR Code</div></div>
     <div>
-      <h3 style="font-size:20px">學員掃碼入場</h3>
+      <h3 style="font-size:20px">學員掃碼入場．${VER.label}</h3>
       <ol class="steps">
-        <li>開啟這個頁面的公開分享連結，複製網址。</li>
-        <li>貼到下方；學員連結<strong>不要</strong>帶 <span class="mono">#host</span>，系統會自動去掉。</li>
+        <li>在上方選「入門版」或「挑戰版」，QR Code 會自動帶到對應版本。</li>
+        <li>下方是網站網址，已預先填好；系統會自動去掉 <span class="mono">#host</span>。</li>
         <li>投影這一頁，學員用手機相機掃描即可，不需要登入。</li>
       </ol>
-      <label for="lk" class="eyebrow" style="display:block;margin-top:16px">學員連結</label>
+      <label for="lk" class="eyebrow" style="display:block;margin-top:16px">網站網址</label>
       <input id="lk" placeholder="https://claude.ai/…" value="${esc(H.link)}" style="margin-top:6px">
       <div class="actions"><button class="btn" id="mk">產生 QR Code</button></div>
       <div class="linktext" id="lt"></div>
@@ -514,7 +589,8 @@ function hostQR(){
 }
 function drawQR(){
   const box=document.getElementById("qrbox"); if(!box) return;
-  const url=H.link.trim().replace(/#host$/,"");
+  const base=H.link.trim().split("#")[0].split("?")[0];
+  const url=base ? base+(H.ver==="basic"?"?v=basic":"") : "";
   if(!url){return}
   box.innerHTML="";
   if(typeof QRCode==="undefined"){box.innerHTML=`<div class="qr-empty">QR 元件載入失敗，請直接把下方連結貼給學員。</div>`}
@@ -563,9 +639,9 @@ function bindScore(){
 }
 function reviewBody(t){
   if(t.type==="mc") return `<div class="rv-list">${t.opts.map((o,j)=>`<div class="r ${j===t.a?"ok":""}">${"ABCD"[j]}．${o}</div>`).join("")}</div>`;
-  if(t.type==="sort") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span><span class="code">${it.c}</span> ${it.t}</span><span class="rv-ans">${STAGES[it.a]}</span></div>`).join("")}</div>`;
+  if(t.type==="sort") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span><span class="code">${it.c}</span> ${it.t}</span><span class="rv-ans">${(t.stages||STAGES)[it.a]}</span></div>`).join("")}</div>`;
   if(t.type==="match") return `<div class="rv-pairs">${t.left.map((it,j)=>`<div><span class="code">${it.c}</span> ${it.t}</div><div><span class="rv-ans"><span class="code p">${t.right[j].c}</span> ${t.right[j].t}</span><span class="hidden-ans">？</span></div>`).join("")}</div>`;
-  if(t.type==="tri") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span>${it.t}</span><span class="rv-ans">${TRI[it.a]}．<span class="mono" style="font-size:13px">${it.c}</span></span></div>`).join("")}</div>`;
+  if(t.type==="tri") return `<div class="rv-list">${t.items.map(it=>`<div class="r ok" style="display:flex;justify-content:space-between;gap:10px"><span>${it.t}</span><span class="rv-ans">${(t.choices||TRI)[it.a]}．<span style="font-size:13px">${it.c}</span></span></div>`).join("")}</div>`;
 }
 function hostReview(){
   const t=TASKS[H.rv];
@@ -599,6 +675,6 @@ function render(){
   lastKey=key;
 }
 let lastKey="";
-window.addEventListener("hashchange",render);
+window.addEventListener("hashchange",()=>{ if(location.hash==="#host"||location.hash==="#basic"||!location.hash) location.reload(); });
 render();
 </script>
