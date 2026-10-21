@@ -210,7 +210,7 @@ details.cfg summary{cursor:pointer;font-weight:700}
 <div id="app" class="wrap"></div>
 
 <script>
-/* ---------- 題庫（依講師補充教材 5 張投影片；ISO/IEC 27701:2025 中文條文本 v1.2） ---------- */
+/* ---------- 題庫（依講師補充教材 5 張投影片） ---------- */
 const ADV_LEVELS = [
   {n:1, name:"看數字猜角色", src:"一張圖看懂附錄 A、B", how:"先猜再聽講解：數字會告訴你控制者和處理者各自的重心在哪裡。"},
   {n:2, name:"生命週期歸位", src:"A.1 控制者：資料生命週期", how:"一筆個資從規劃走到結束。把控制措施放回它最主要的那一站。"},
@@ -421,7 +421,7 @@ function renderStart(){
     <div class="levels">${LEVELS.map(l=>`<div class="lv"><div class="n">0${l.n}</div><div><div class="t">${l.name}</div><div class="s">${l.src}</div></div><div class="m">${lvMax(l.n)} 分</div></div>`).join("")}</div>
     <button class="btn full accent" id="go">開始闖關</button>
   </div>
-  <p class="foot">講師補充教材｜非官方課程內容、不在考試範圍｜依 ISO/IEC 27701:2025 中文條文本 v1.2 整理</p>`;
+  <p class="foot">講師補充教材｜非官方課程內容、不在考試範圍</p>`;
   const nm=document.getElementById("nm"), go=document.getElementById("go");
   const upd=()=>{go.disabled=!nm.value.trim()}; upd();
   nm.oninput=upd;
